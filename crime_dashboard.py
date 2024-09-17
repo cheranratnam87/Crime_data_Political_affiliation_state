@@ -106,15 +106,14 @@ if response.status_code == 200:
                 lambda row: f"rgba(255, 0, 0, {row['crime_rate'] / filtered_df['crime_rate'].max()})" if row['political_affiliation'] == 'Republican'
                 else f"rgba(0, 0, 255, {row['crime_rate'] / filtered_df['crime_rate'].max()})", axis=1)
 
+            # Create the map
             fig = px.choropleth(
                 filtered_df,
                 locations='state_abbr',
                 locationmode="USA-states",
-                color='crime_rate',  # Crime rate for color intensity
+                color='color',  # Use the new color column based on affiliation and intensity
                 hover_name='state_name',
                 hover_data={'crime_rate': True},
-                color_continuous_scale=[(0, 'blue'), (1, 'red')],
-                labels={'crime_rate': f"{selected_specific_crime.title().replace('_', ' ')} Rate"},
                 scope="usa"
             )
 
