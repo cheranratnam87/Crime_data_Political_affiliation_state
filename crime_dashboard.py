@@ -32,8 +32,12 @@ if response.status_code == 200:
 
         # Title and description
         st.title("US Crime Statistics Dashboard")
-        st.write("""
-        This dashboard shows crime statistics across different states and years. You can filter by year, state, and crime categories.
+
+        # Add the tagline with hyperlinks
+        st.markdown("""
+        **Data set obtained from [Federal Bureau of Investigation Crime Data Explorer - Summary Reporting System (SRS)] (https://cde.ucr.cjis.gov/LATEST/webapp/#/pages/downloads) |**
+        **Dashboard Created by [Cheran Ratnam](https://cheranratnam.com/about/) |**
+        **[LinkedIn](https://www.linkedin.com/in/cheranratnam/)**
         """)
 
         # Sidebar filters
