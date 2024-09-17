@@ -64,6 +64,11 @@ if response.status_code == 200:
 
         # Ensure filtered data is not empty
         if not filtered_df.empty:
+            # First visual: Top 10 States for Violent Crimes (Restored)
+            st.subheader(f"Top 10 States for Violent Crimes in {selected_year_range[0]} - {selected_year_range[1]}")
+            top_10_states = filtered_df[['state_abbr', 'violent_crime']].groupby('state_abbr').sum().sort_values(by='violent_crime', ascending=False).head(10)
+            st.bar_chart(top_10_states)
+
             # Add a new column for political affiliation
             filtered_df['political_affiliation'] = filtered_df['state_abbr'].apply(
                 lambda x: 'Republican' if x in political_affiliation['Republican'] else ('Democratic' if x in political_affiliation['Democratic'] else 'Other'))
@@ -71,7 +76,7 @@ if response.status_code == 200:
             # Calculate crime rate per capita (crime rate)
             filtered_df['crime_rate'] = filtered_df['violent_crime'] / filtered_df['population']
 
-            # Second visual: Interactive choropleth map (New visual with color-coding by political affiliation)
+            # Second visual: Interactive choropleth map (with red for Republican and blue for Democratic states)
             st.subheader(f"Crime Rate per Capita by State for {selected_year_range[0]} - {selected_year_range[1]}")
 
             # Define a custom color scale based on political affiliation
@@ -105,7 +110,7 @@ if response.status_code == 200:
             violent_crime_trend = filtered_df[['year', 'state_abbr', 'crime_rate']].groupby(['year', 'state_abbr']).sum().reset_index()
             st.line_chart(violent_crime_trend.pivot(index='year', columns='state_abbr', values='crime_rate'))
 
-            # Fourth visual: Violent crimes over the years by political affiliation (Proportional to Population) (Original visual)
+            # Fourth visual: Violent crimes over the years by political affiliation (Proportional to Population)
             st.subheader(f"Violent Crimes Per Capita Over the Years by Political Affiliation")
 
             # Group by year and political affiliation, summing the crime rates
