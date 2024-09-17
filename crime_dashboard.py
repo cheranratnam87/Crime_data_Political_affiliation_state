@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import requests
 from io import StringIO
-import plotly.graph_objects as go
+import plotly.express as px
 
 # Political affiliation dictionary for filtering
 political_affiliation = {
@@ -78,6 +78,9 @@ if response.status_code == 200:
         else:
             selected_crimes = st.sidebar.multiselect("Select Crime Types", options=crime_columns, default=crime_columns)
 
+        # Select specific crime for the map and trend visualization
+        selected_specific_crime = st.sidebar.selectbox("Select Specific Crime for Map", options=crime_columns, index=0)
+
         # Filter the data based on the selected year range and state
         filtered_df = df[(df['year'] >= selected_year_range[0]) & (df['year'] <= selected_year_range[1]) & (df['state_abbr'].isin(selected_state))]
 
@@ -88,44 +91,32 @@ if response.status_code == 200:
             top_10_states = filtered_df[['state_abbr', 'violent_crime']].groupby('state_abbr').sum().sort_values(by='violent_crime', ascending=False).head(10)
             st.bar_chart(top_10_states)
 
-            # Second visual: Interactive map (New map visual)
-            st.subheader(f"Crime Rate per Capita by State for {selected_year_range[0]} - {selected_year_range[1]}")
+            # Second visual: Interactive map (New map visual based on the selected crime type)
+            st.subheader(f"{selected_specific_crime.title().replace('_', ' ')} Rate per Capita by State for {selected_year_range[0]} - {selected_year_range[1]}")
 
             # Add a new column for political affiliation
             filtered_df['political_affiliation'] = filtered_df['state_abbr'].apply(
                 lambda x: 'Republican' if x in political_affiliation['Republican'] else 'Democratic')
 
-            # Calculate crime rate per capita (crime rate)
-            filtered_df['crime_rate'] = filtered_df['violent_crime'] / filtered_df['population']
+            # Calculate crime rate per capita (crime rate) for the selected specific crime
+            filtered_df['crime_rate'] = filtered_df[selected_specific_crime] / filtered_df['population']
 
-            # Define a custom color scale based on political affiliation
-            color_map = {
-                'Republican': 'red',
-                'Democratic': 'blue'
-            }
+            # Use consistent colors for Republican (red) and Democratic (blue) states
+            fig = px.choropleth(
+                filtered_df,
+                locations='state_abbr',
+                locationmode="USA-states",
+                color='political_affiliation',
+                hover_name='state_name',
+                hover_data={'crime_rate': True},
+                color_discrete_map={'Republican': 'red', 'Democratic': 'blue'},
+                labels={'crime_rate': f"{selected_specific_crime.title().replace('_', ' ')} Rate"},
+                scope="usa"
+            )
 
-            # Assign colors based on political affiliation
-            filtered_df['color'] = filtered_df['political_affiliation'].map(color_map)
-
-            fig = go.Figure(data=go.Choropleth(
-                locations=filtered_df['state_abbr'],
-                z=filtered_df['crime_rate'],  # Using the crime rate for the color intensity
-                locationmode='USA-states',
-                text=filtered_df['state_name'],  # Hover text
-                colorscale=[[0, 'blue'], [1, 'red']] if selected_affiliation == 'All' else None,  # Color coding based on affiliation
-                marker_line_color='black',  # State boundaries
-                colorbar_title="Crime Rate",
-                showscale=False  # Disable color scale when showing affiliation colors
-            ))
-
-            # Update layout for the map
             fig.update_layout(
-                title_text='Crime Rate per Capita by State',
-                geo=dict(
-                    scope='usa',
-                    showlakes=True,  # lakes
-                    lakecolor='rgb(255, 255, 255)'
-                ),
+                title_text=f"{selected_specific_crime.title().replace('_', ' ')} Rate per Capita by State",
+                geo=dict(showcoastlines=True, coastlinecolor="Black")
             )
 
             st.plotly_chart(fig)
@@ -152,9 +143,6 @@ if response.status_code == 200:
 
             # Fifth visual: Specific crime trend by political affiliation (Proportional to Population)
             st.subheader(f"Selected Crime Trend Per Capita by Political Affiliation Over the Years")
-
-            # Select specific crime for the trend visualization
-            selected_specific_crime = st.sidebar.selectbox("Select Specific Crime for Trend", options=crime_columns, index=0)
 
             # Calculate crime rate per capita for the selected specific crime
             filtered_political_df['specific_crime_rate'] = filtered_political_df[selected_specific_crime] / filtered_political_df['population']
