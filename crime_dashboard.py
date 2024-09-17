@@ -119,6 +119,18 @@ if response.status_code == 200:
             # Create a line chart showing crime rate by political affiliation
             st.line_chart(political_crime_trend.pivot(index='year', columns='political_affiliation', values='crime_rate'))
 
+            # Fourth visual: Specific crime trend by political affiliation
+            st.subheader(f"Selected Crime Trend by Political Affiliation Over the Years")
+
+            # Select specific crime for the trend visualization
+            selected_specific_crime = st.sidebar.selectbox("Select Specific Crime for Trend", options=crime_columns, index=0)
+
+            # Filter the political data for the selected crime
+            specific_crime_trend = filtered_political_df[['year', 'political_affiliation', selected_specific_crime]].groupby(['year', 'political_affiliation']).sum().reset_index()
+
+            # Create a line chart showing the trend of the selected specific crime
+            st.line_chart(specific_crime_trend.pivot(index='year', columns='political_affiliation', values=selected_specific_crime))
+
         else:
             st.write("No data available for the selected filters.")
     else:
