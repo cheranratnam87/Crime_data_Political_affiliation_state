@@ -64,11 +64,6 @@ if response.status_code == 200:
 
         # Ensure filtered data is not empty
         if not filtered_df.empty:
-            # First visual: Top 10 States for Violent Crimes (Original visual)
-            st.subheader(f"Top 10 States for Violent Crimes in {selected_year_range[0]} - {selected_year_range[1]}")
-            top_10_states = filtered_df[['state_abbr', 'violent_crime']].groupby('state_abbr').sum().sort_values(by='violent_crime', ascending=False).head(10)
-            st.bar_chart(top_10_states)
-
             # Add a new column for political affiliation
             filtered_df['political_affiliation'] = filtered_df['state_abbr'].apply(
                 lambda x: 'Republican' if x in political_affiliation['Republican'] else ('Democratic' if x in political_affiliation['Democratic'] else 'Other'))
@@ -76,24 +71,31 @@ if response.status_code == 200:
             # Calculate crime rate per capita (crime rate)
             filtered_df['crime_rate'] = filtered_df['violent_crime'] / filtered_df['population']
 
-            # Second visual: Interactive choropleth map (New visual)
+            # Second visual: Interactive choropleth map (New visual with color-coding by political affiliation)
             st.subheader(f"Crime Rate per Capita by State for {selected_year_range[0]} - {selected_year_range[1]}")
+
+            # Define a custom color scale based on political affiliation
+            color_map = {'Republican': 'red', 'Democratic': 'blue'}
+
+            # Map color to political affiliation
+            filtered_df['color'] = filtered_df['political_affiliation'].map(color_map)
 
             fig = px.choropleth(
                 filtered_df,
                 locations='state_abbr',
                 locationmode="USA-states",
-                color='crime_rate',
+                color='crime_rate' if selected_affiliation == 'All' else 'color',
                 hover_name='state_name',
                 hover_data={'population': True, 'violent_crime': True},
-                color_continuous_scale="Reds",
                 labels={'crime_rate': 'Crime Rate per Capita'},
-                scope="usa"
+                scope="usa",
+                color_continuous_scale="Reds" if selected_affiliation == 'All' else None,
             )
 
             fig.update_layout(
                 title_text='Crime Rate per Capita by State',
-                geo=dict(showcoastlines=True, coastlinecolor="Black")
+                geo=dict(showcoastlines=True, coastlinecolor="Black"),
+                showlegend=False
             )
 
             st.plotly_chart(fig)
