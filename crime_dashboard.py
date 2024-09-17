@@ -101,15 +101,15 @@ if response.status_code == 200:
             # Calculate crime rate per capita (crime rate) for the selected specific crime
             filtered_df['crime_rate'] = filtered_df[selected_specific_crime] / filtered_df['population']
 
-            # Use consistent colors for Republican (red) and Democratic (blue) states
+            # Use the crime rate for coloring the map
             fig = px.choropleth(
                 filtered_df,
                 locations='state_abbr',
                 locationmode="USA-states",
-                color='political_affiliation',
+                color='crime_rate',
                 hover_name='state_name',
                 hover_data={'crime_rate': True},
-                color_discrete_map={'Republican': 'red', 'Democratic': 'blue'},
+                color_continuous_scale='Reds',
                 labels={'crime_rate': f"{selected_specific_crime.title().replace('_', ' ')} Rate"},
                 scope="usa"
             )
@@ -128,6 +128,10 @@ if response.status_code == 200:
 
             # Fourth visual: Violent crimes over the years by political affiliation (Proportional to Population)
             st.subheader(f"Violent Crimes Per Capita Over the Years by Political Affiliation")
+
+            # Add a new column for political affiliation
+            df['political_affiliation'] = df['state_abbr'].apply(
+                lambda x: 'Republican' if x in political_affiliation['Republican'] else ('Democratic' if x in political_affiliation['Democratic'] else 'Other'))
 
             # Filter for selected year range
             filtered_political_df = df[(df['year'] >= selected_year_range[0]) & (df['year'] <= selected_year_range[1])]
