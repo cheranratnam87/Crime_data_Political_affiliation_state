@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import requests
 from io import StringIO
-import plotly.express as px
 
 # Political affiliation dictionary for filtering
 political_affiliation = {
@@ -22,6 +21,7 @@ if response.status_code == 200:
     # Now fetch the CSV file using the signed URL
     csv_response = requests.get(csv_url)
     
+    # Check if the request was successful
     if csv_response.status_code == 200:
         # Use StringIO to read the CSV content directly into pandas
         csv_data = StringIO(csv_response.text)
@@ -59,58 +59,80 @@ if response.status_code == 200:
         else:
             filtered_states = df['state_abbr'].dropna().unique()  # All states
 
+        # "Select All" functionality for State filter
+        states = df[df['state_abbr'].isin(filtered_states)]['state_abbr'].dropna().unique()
+        all_states_selected = st.sidebar.checkbox("Select All States", value=True)
+
+        if all_states_selected:
+            selected_state = states.tolist()
+        else:
+            selected_state = st.sidebar.multiselect("Select State(s)", options=sorted(states), default=states)
+
+        # "Select All" functionality for Crime Type filter
+        crime_columns = ['violent_crime', 'homicide', 'rape_legacy', 'rape_revised', 'robbery', 'aggravated_assault',
+                         'property_crime', 'burglary', 'larceny', 'motor_vehicle_theft']
+        all_crimes_selected = st.sidebar.checkbox("Select All Crime Types", value=True)
+
+        if all_crimes_selected:
+            selected_crimes = crime_columns
+        else:
+            selected_crimes = st.sidebar.multiselect("Select Crime Types", options=crime_columns, default=crime_columns)
+
         # Filter the data based on the selected year range and state
-        filtered_df = df[(df['year'] >= selected_year_range[0]) & (df['year'] <= selected_year_range[1]) & (df['state_abbr'].isin(filtered_states))]
+        filtered_df = df[(df['year'] >= selected_year_range[0]) & (df['year'] <= selected_year_range[1]) & (df['state_abbr'].isin(selected_state))]
 
         # Ensure filtered data is not empty
         if not filtered_df.empty:
-            # First visual: Top 10 States for Violent Crimes (Original visual)
-            st.subheader(f"Top 10 States for Violent Crimes in {selected_year_range[0]} - {selected_year_range[1]}")
-            top_10_states = filtered_df[['state_abbr', 'violent_crime']].groupby('state_abbr').sum().sort_values(by='violent_crime', ascending=False).head(10)
-            st.bar_chart(top_10_states)
+            # Show Top 10 States for Violent Crimes by default
+            if all_states_selected and all_crimes_selected:
+                st.subheader(f"Top 10 States for Violent Crimes in {selected_year_range[0]} - {selected_year_range[1]}")
+                top_10_states = filtered_df[['state_abbr', 'violent_crime']].groupby('state_abbr').sum().sort_values(by='violent_crime', ascending=False).head(10)
+                st.bar_chart(top_10_states)
 
-            # Add a new column for political affiliation
-            filtered_df['political_affiliation'] = filtered_df['state_abbr'].apply(
-                lambda x: 'Republican' if x in political_affiliation['Republican'] else ('Democratic' if x in political_affiliation['Democratic'] else 'Other'))
+            else:
+                # Show all states based on filters without limiting to top 10
+                st.subheader(f"Crime Data for Selected Year Range and States")
+                crime_data = filtered_df[['state_abbr', 'state_name', 'population'] + selected_crimes]
+                st.bar_chart(crime_data.set_index('state_abbr')[selected_crimes])
 
-            # Calculate crime rate per capita (crime rate)
-            filtered_df['crime_rate'] = filtered_df['violent_crime'] / filtered_df['population']
+            # Second visual: Violent crimes over the years for selected filters
+            st.subheader(f"Violent Crimes Over the Years for Selected States and Year Range")
+            violent_crime_trend = filtered_df[['year', 'state_abbr', 'violent_crime']].groupby(['year', 'state_abbr']).sum().reset_index()
+            st.line_chart(violent_crime_trend.pivot(index='year', columns='state_abbr', values='violent_crime'))
 
-            # Second visual: Interactive choropleth map (New visual)
-            st.subheader(f"Crime Rate per Capita by State for {selected_year_range[0]} - {selected_year_range[1]}")
-
-            fig = px.choropleth(
-                filtered_df,
-                locations='state_abbr',
-                locationmode="USA-states",
-                color='crime_rate',
-                hover_name='state_name',
-                hover_data={'population': True, 'violent_crime': True},
-                color_continuous_scale="Reds",
-                labels={'crime_rate': 'Crime Rate per Capita'},
-                scope="usa"
-            )
-
-            fig.update_layout(
-                title_text='Crime Rate per Capita by State',
-                geo=dict(showcoastlines=True, coastlinecolor="Black")
-            )
-
-            st.plotly_chart(fig)
-
-            # Third visual: Violent crimes over the years for selected filters (Proportional to population)
-            st.subheader(f"Violent Crimes Per Capita Over the Years for Selected States and Year Range")
-            violent_crime_trend = filtered_df[['year', 'state_abbr', 'crime_rate']].groupby(['year', 'state_abbr']).sum().reset_index()
-            st.line_chart(violent_crime_trend.pivot(index='year', columns='state_abbr', values='crime_rate'))
-
-            # Fourth visual: Violent crimes over the years by political affiliation (Proportional to Population) (Original visual)
+            # Third visual: Violent crimes over the years by political affiliation (Proportional to Population)
             st.subheader(f"Violent Crimes Per Capita Over the Years by Political Affiliation")
 
+            # Add a new column for political affiliation
+            df['political_affiliation'] = df['state_abbr'].apply(
+                lambda x: 'Republican' if x in political_affiliation['Republican'] else ('Democratic' if x in political_affiliation['Democratic'] else 'Other'))
+
+            # Filter for selected year range
+            filtered_political_df = df[(df['year'] >= selected_year_range[0]) & (df['year'] <= selected_year_range[1])]
+
+            # Calculate crime per capita (crime rate)
+            filtered_political_df['crime_rate'] = filtered_political_df['violent_crime'] / filtered_political_df['population']
+
             # Group by year and political affiliation, summing the crime rates
-            political_crime_trend = filtered_df[['year', 'political_affiliation', 'crime_rate']].groupby(['year', 'political_affiliation']).sum().reset_index()
+            political_crime_trend = filtered_political_df[['year', 'political_affiliation', 'crime_rate']].groupby(['year', 'political_affiliation']).sum().reset_index()
 
             # Create a line chart showing crime rate by political affiliation
             st.line_chart(political_crime_trend.pivot(index='year', columns='political_affiliation', values='crime_rate'))
+
+            # Fourth visual: Specific crime trend by political affiliation (Proportional to Population)
+            st.subheader(f"Selected Crime Trend Per Capita by Political Affiliation Over the Years")
+
+            # Select specific crime for the trend visualization
+            selected_specific_crime = st.sidebar.selectbox("Select Specific Crime for Trend", options=crime_columns, index=0)
+
+            # Calculate crime rate per capita for the selected specific crime
+            filtered_political_df['specific_crime_rate'] = filtered_political_df[selected_specific_crime] / filtered_political_df['population']
+
+            # Filter the political data for the selected crime
+            specific_crime_trend = filtered_political_df[['year', 'political_affiliation', 'specific_crime_rate']].groupby(['year', 'political_affiliation']).sum().reset_index()
+
+            # Create a line chart showing the trend of the selected specific crime per capita
+            st.line_chart(specific_crime_trend.pivot(index='year', columns='political_affiliation', values='specific_crime_rate'))
 
         else:
             st.write("No data available for the selected filters.")
