@@ -101,21 +101,28 @@ if response.status_code == 200:
             # Calculate crime rate per capita (crime rate) for the selected specific crime
             filtered_df['crime_rate'] = filtered_df[selected_specific_crime] / filtered_df['population']
 
-            # Assign base colors to political affiliations
-            filtered_df['color'] = filtered_df['political_affiliation'].apply(
-                lambda x: 'rgba(255,0,0,0.6)' if x == 'Republican' else 'rgba(0,0,255,0.6)')
+            # Apply colors with intensity
+            def apply_color(row):
+                # Adjust the transparency (alpha) based on crime rate
+                max_crime_rate = filtered_df['crime_rate'].max()
+                alpha = row['crime_rate'] / max_crime_rate if max_crime_rate > 0 else 0.2
+                if row['political_affiliation'] == 'Republican':
+                    return f'rgba(255,0,0,{alpha})'  # Red with alpha
+                else:
+                    return f'rgba(0,0,255,{alpha})'  # Blue with alpha
 
-            # Use the crime rate for intensity
+            filtered_df['color'] = filtered_df.apply(apply_color, axis=1)
+
+            # Use the 'color' column directly
             fig = px.choropleth(
                 filtered_df,
                 locations='state_abbr',
                 locationmode="USA-states",
-                color='crime_rate',  # Use crime rate for color intensity
+                color='color',  # Use the RGBA values for color intensity
                 hover_name='state_name',
                 hover_data={'crime_rate': True, 'political_affiliation': True},
                 labels={'crime_rate': f"{selected_specific_crime.title().replace('_', ' ')} Rate"},
-                scope="usa",
-                color_continuous_scale=[(0, 'blue'), (1, 'red')],  # Blue for Democratic, Red for Republican
+                scope="usa"
             )
 
             fig.update_traces(marker=dict(line=dict(color='black', width=0.5)))  # State boundaries
@@ -123,7 +130,7 @@ if response.status_code == 200:
             fig.update_layout(
                 title_text=f"{selected_specific_crime.title().replace('_', ' ')} Rate per Capita by State",
                 geo=dict(showcoastlines=True, coastlinecolor="Black"),
-                coloraxis_showscale=False  # Hide color scale since we're showing intensity
+                coloraxis_showscale=False  # Hide color scale since we're showing intensity via RGBA
             )
 
             st.plotly_chart(fig)
