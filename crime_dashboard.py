@@ -101,21 +101,21 @@ if response.status_code == 200:
             # Calculate crime rate per capita (crime rate) for the selected specific crime
             filtered_df['crime_rate'] = filtered_df[selected_specific_crime] / filtered_df['population']
 
-            # Assign numeric values to political affiliations to use in the color scale
-            filtered_df['affiliation_numeric'] = filtered_df['political_affiliation'].apply(
-                lambda x: 1 if x == 'Republican' else 0)
+            # Assign base colors to political affiliations
+            filtered_df['color'] = filtered_df['political_affiliation'].apply(
+                lambda x: 'rgba(255,0,0,0.6)' if x == 'Republican' else 'rgba(0,0,255,0.6)')
 
-            # Use a color scale where 1 (Republican) is red and 0 (Democratic) is blue, with intensity based on crime rate
+            # Use the crime rate for intensity
             fig = px.choropleth(
                 filtered_df,
                 locations='state_abbr',
                 locationmode="USA-states",
-                color='crime_rate',  # Intensity based on crime rate
+                color='crime_rate',  # Use crime rate for color intensity
                 hover_name='state_name',
                 hover_data={'crime_rate': True, 'political_affiliation': True},
                 labels={'crime_rate': f"{selected_specific_crime.title().replace('_', ' ')} Rate"},
+                scope="usa",
                 color_continuous_scale=[(0, 'blue'), (1, 'red')],  # Blue for Democratic, Red for Republican
-                scope="usa"
             )
 
             fig.update_traces(marker=dict(line=dict(color='black', width=0.5)))  # State boundaries
