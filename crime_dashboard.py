@@ -91,7 +91,7 @@ if response.status_code == 200:
             top_10_states = filtered_df[['state_abbr', 'violent_crime']].groupby('state_abbr').sum().sort_values(by='violent_crime', ascending=False).head(10)
             st.bar_chart(top_10_states)
 
-            # Second visual: Interactive map (New map visual based on the selected crime type)
+            # Second visual: Interactive map (Map with colors based on crime rate and political affiliation)
             st.subheader(f"{selected_specific_crime.title().replace('_', ' ')} Rate per Capita by State for {selected_year_range[0]} - {selected_year_range[1]}")
 
             # Add a new column for political affiliation
@@ -101,22 +101,29 @@ if response.status_code == 200:
             # Calculate crime rate per capita (crime rate) for the selected specific crime
             filtered_df['crime_rate'] = filtered_df[selected_specific_crime] / filtered_df['population']
 
-            # Use the crime rate for coloring the map
+            # Apply color intensity based on the crime rate, while keeping base colors for affiliation
+            filtered_df['color'] = filtered_df.apply(
+                lambda row: f"rgba(255, 0, 0, {row['crime_rate'] / filtered_df['crime_rate'].max()})" if row['political_affiliation'] == 'Republican'
+                else f"rgba(0, 0, 255, {row['crime_rate'] / filtered_df['crime_rate'].max()})", axis=1)
+
             fig = px.choropleth(
                 filtered_df,
                 locations='state_abbr',
                 locationmode="USA-states",
-                color='crime_rate',
+                color='crime_rate',  # Crime rate for color intensity
                 hover_name='state_name',
                 hover_data={'crime_rate': True},
-                color_continuous_scale='Reds',
+                color_continuous_scale=[(0, 'blue'), (1, 'red')],
                 labels={'crime_rate': f"{selected_specific_crime.title().replace('_', ' ')} Rate"},
                 scope="usa"
             )
 
+            fig.update_traces(marker=dict(line=dict(color='black', width=0.5)))  # State boundaries
+
             fig.update_layout(
                 title_text=f"{selected_specific_crime.title().replace('_', ' ')} Rate per Capita by State",
-                geo=dict(showcoastlines=True, coastlinecolor="Black")
+                geo=dict(showcoastlines=True, coastlinecolor="Black"),
+                coloraxis_showscale=False  # Hide color scale since we're showing intensity
             )
 
             st.plotly_chart(fig)
