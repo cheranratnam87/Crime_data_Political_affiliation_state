@@ -101,21 +101,23 @@ if response.status_code == 200:
             # Calculate crime rate per capita (crime rate) for the selected specific crime
             filtered_df['crime_rate'] = filtered_df[selected_specific_crime] / filtered_df['population']
 
-            # Define color scales based on political affiliation
+            # Define custom color scale based on political affiliation and crime rate
             def get_color_scale(row):
+                # Crime rate as alpha value to intensify colors
+                intensity = row["crime_rate"] / filtered_df["crime_rate"].max()
                 if row['political_affiliation'] == 'Republican':
-                    return f'rgba(255, 0, 0, {row["crime_rate"] / filtered_df["crime_rate"].max()})'
+                    return f'rgba(255, 0, 0, {intensity})'  # Red for Republican
                 else:
-                    return f'rgba(0, 0, 255, {row["crime_rate"] / filtered_df["crime_rate"].max()})'
+                    return f'rgba(0, 0, 255, {intensity})'  # Blue for Democratic
 
-            # Apply color scale based on crime rate and political affiliation
+            # Apply the color scale function
             filtered_df['color'] = filtered_df.apply(get_color_scale, axis=1)
 
             fig = px.choropleth(
                 filtered_df,
                 locations='state_abbr',
                 locationmode="USA-states",
-                color='color',  # Use the RGBA values for color intensity
+                color='color',  # Use custom colors based on affiliation and intensity
                 hover_name='state_name',
                 hover_data={'crime_rate': True, 'political_affiliation': True},
                 labels={'crime_rate': f"{selected_specific_crime.title().replace('_', ' ')} Rate"},
@@ -127,7 +129,7 @@ if response.status_code == 200:
             fig.update_layout(
                 title_text=f"{selected_specific_crime.title().replace('_', ' ')} Rate per Capita by State",
                 geo=dict(showcoastlines=True, coastlinecolor="Black"),
-                coloraxis_showscale=False  # Hide color scale since we're showing intensity via RGBA
+                coloraxis_showscale=False  # Hide color scale legend since colors are defined in RGBA
             )
 
             st.plotly_chart(fig)
