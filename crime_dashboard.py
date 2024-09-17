@@ -35,7 +35,7 @@ if response.status_code == 200:
 
         # Add the tagline with hyperlinks
         st.markdown("""
-        **Data set obtained from [Federal Bureau of Investigation Crime Data Explorer - Summary Reporting System (SRS)] (https://cde.ucr.cjis.gov/LATEST/webapp/#/pages/downloads) |**
+        **Data set obtained from [Federal Bureau of Investigation Crime Data Explorer - Summary Reporting System (SRS)](https://cde.ucr.cjis.gov/LATEST/webapp/#/pages/downloads) |**
         **Dashboard Created by [Cheran Ratnam](https://cheranratnam.com/about/) |**
         **[LinkedIn](https://www.linkedin.com/in/cheranratnam/)**
         """)
