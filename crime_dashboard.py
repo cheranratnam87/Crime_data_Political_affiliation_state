@@ -101,20 +101,20 @@ if response.status_code == 200:
             # Calculate crime rate per capita (crime rate) for the selected specific crime
             filtered_df['crime_rate'] = filtered_df[selected_specific_crime] / filtered_df['population']
 
-            # Apply color intensity based on the crime rate, while keeping base colors for affiliation
-            filtered_df['color'] = filtered_df.apply(
-                lambda row: f"rgba(255, 0, 0, {row['crime_rate'] / filtered_df['crime_rate'].max()})" if row['political_affiliation'] == 'Republican'
-                else f"rgba(0, 0, 255, {row['crime_rate'] / filtered_df['crime_rate'].max()})", axis=1)
+            # Assign numeric values to political affiliations to use in the color scale
+            filtered_df['affiliation_numeric'] = filtered_df['political_affiliation'].apply(
+                lambda x: 1 if x == 'Republican' else 0)
 
+            # Use a color scale where 1 (Republican) is red and 0 (Democratic) is blue, with intensity based on crime rate
             fig = px.choropleth(
                 filtered_df,
                 locations='state_abbr',
                 locationmode="USA-states",
-                color='crime_rate',  # Crime rate for color intensity
+                color='crime_rate',  # Intensity based on crime rate
                 hover_name='state_name',
-                hover_data={'crime_rate': True},
-                color_continuous_scale=[(0, 'blue'), (1, 'red')],
+                hover_data={'crime_rate': True, 'political_affiliation': True},
                 labels={'crime_rate': f"{selected_specific_crime.title().replace('_', ' ')} Rate"},
+                color_continuous_scale=[(0, 'blue'), (1, 'red')],  # Blue for Democratic, Red for Republican
                 scope="usa"
             )
 
