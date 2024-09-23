@@ -117,10 +117,21 @@ if not filtered_df.empty:
 
     st.plotly_chart(fig)
 
-    # Third visual: Violent crimes over the years for selected filters
-    st.subheader(f"Violent Crimes Over the Years for Selected States and Year Range")
-    violent_crime_trend = filtered_df[['year', 'state_abbr', 'violent_crime']].groupby(['year', 'state_abbr']).sum().reset_index()
-    st.line_chart(violent_crime_trend.pivot(index='year', columns='state_abbr', values='violent_crime'))
+    # Third visual: Crime trends over the years for selected crime type and states
+    st.subheader(f"{selected_specific_crime.title().replace('_', ' ')} Over the Years for Selected States and Year Range")
+
+    # Group data by year and state for the selected crime type
+    crime_trend = filtered_df[['year', 'state_abbr', selected_specific_crime]].groupby(['year', 'state_abbr']).sum().reset_index()
+
+    # Pivot the data to make the years the index and states the columns, and fill missing values with 0
+    crime_trend_pivot = crime_trend.pivot(index='year', columns='state_abbr', values=selected_specific_crime).fillna(0)
+
+    # Reindex the pivoted data to ensure all years in the selected range are included, even if some have no data
+    full_year_range = pd.Index(range(selected_year_range[0], selected_year_range[1] + 1))
+    crime_trend_pivot = crime_trend_pivot.reindex(full_year_range, fill_value=0)
+
+    # Plot the line chart with consistent x-axis (years)
+    st.line_chart(crime_trend_pivot)
 
     # Fourth visual: Violent crimes over the years by political affiliation (Proportional to Population)
     st.subheader(f"Violent Crimes Per Capita Over the Years by Political Affiliation")
