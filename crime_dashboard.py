@@ -125,21 +125,22 @@ if not filtered_df.empty:
     # Fourth visual: Violent crimes over the years by political affiliation (Proportional to Population)
     st.subheader(f"Violent Crimes Per Capita Over the Years by Political Affiliation")
 
-    # Add a new column for political affiliation
-    df['political_affiliation'] = df['state_abbr'].apply(
-        lambda x: 'Republican' if x in political_affiliation['Republican'] else ('Democratic' if x in political_affiliation['Democratic'] else 'Other'))
+# Ensure columns are numeric
+    filtered_political_df['population'] = pd.to_numeric(filtered_political_df['population'], errors='coerce').fillna(0)
+    filtered_political_df['violent_crime'] = pd.to_numeric(filtered_political_df['violent_crime'], errors='coerce').fillna(0)
 
-    # Filter for selected year range
-    filtered_political_df = df[(df['year'] >= selected_year_range[0]) & (df['year'] <= selected_year_range[1])]
+# Handle zero population to avoid division by zero
+    filtered_political_df['population'].replace(0, float('nan'), inplace=True)
 
-    # Calculate crime per capita (crime rate)
+# Calculate crime rate per capita (crime rate)
     filtered_political_df['crime_rate'] = filtered_political_df['violent_crime'] / filtered_political_df['population']
 
-    # Group by year and political affiliation, summing the crime rates
+# Group by year and political affiliation, summing the crime rates
     political_crime_trend = filtered_political_df[['year', 'political_affiliation', 'crime_rate']].groupby(['year', 'political_affiliation']).sum().reset_index()
 
-    # Create a line chart showing crime rate by political affiliation
+# Create a line chart showing crime rate by political affiliation
     st.line_chart(political_crime_trend.pivot(index='year', columns='political_affiliation', values='crime_rate'))
+
 
     # Fifth visual: Specific crime trend by political affiliation (Proportional to Population)
     st.subheader(f"Selected Crime Trend Per Capita by Political Affiliation Over the Years")
