@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+import requests
+from io import StringIO
 import plotly.express as px
 
 # Political affiliation dictionary for filtering
@@ -8,10 +10,10 @@ political_affiliation = {
     'Democratic': ['CA', 'CO', 'CT', 'DE', 'HI', 'IL', 'ME', 'MD', 'MA', 'MI', 'MN', 'NV', 'NJ', 'NM', 'NY', 'NC', 'OR', 'PA', 'RI', 'VA', 'VT', 'WA', 'WI']
 }
 
-# Load the dataset from the GitHub raw URL
-url = 'https://raw.githubusercontent.com/cheranratnam87/Crime_data_Political_affiliation_state/refs/heads/master/estimated_crimes_1979_2023.csv'
+# Load the dataset directly from the raw GitHub URL
+url = 'https://raw.githubusercontent.com/cheranratnam87/Crime_data_Political_affiliation_state/master/estimated_crimes_1979_2023.csv'
 
-# Directly load the CSV file using pandas
+# Use pandas to directly read the CSV from the URL
 df = pd.read_csv(url)
 
 # Set page configuration
@@ -149,4 +151,4 @@ if not filtered_df.empty:
     st.line_chart(specific_crime_trend.pivot(index='year', columns='political_affiliation', values='specific_crime_rate'))
 
 else:
-    st.write("Failed to retrieve the CSV file.")
+    st.write("No data available for the selected filters.")
