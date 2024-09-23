@@ -11,7 +11,7 @@ political_affiliation = {
 }
 
 # Load the dataset from the signed URL
-url = 'https://cde.ucr.cjis.gov/LATEST/s3/signedurl?key=additional-datasets/srs/estimated_crimes_1979_2022.csv'
+url = 'https://raw.githubusercontent.com/cheranratnam87/Crime_data_Political_affiliation_state/refs/heads/master/estimated_crimes_1979_2023.csv'
 response = requests.get(url)
 
 if response.status_code == 200:
