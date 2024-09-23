@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-from io import StringIO
 import plotly.express as px
 
 # Political affiliation dictionary for filtering
@@ -10,8 +9,10 @@ political_affiliation = {
 }
 
 # Load the dataset from your GitHub URL
-github_url = 'https://github.com/cheranratnam87/Crime_data_Political_affiliation_state/blob/master/estimated_crimes_1979_2023.csv'
-df = pd.read_csv(github_url)
+github_url = 'https://raw.githubusercontent.com/cheranratnam87/Crime_data_Political_affiliation_state/refs/heads/master/estimated_crimes_1979_2023.csv'
+
+# Read the CSV, specifying the delimiter
+df = pd.read_csv(github_url, delimiter=',')
 
 # Set page configuration
 st.set_page_config(page_title="Crime Statistics Dashboard", layout="wide")
@@ -144,4 +145,8 @@ if not filtered_df.empty:
     # Filter the political data for the selected crime
     specific_crime_trend = filtered_political_df[['year', 'political_affiliation', 'specific_crime_rate']].groupby(['year', 'political_affiliation']).sum().reset_index()
 
-    #
+    # Create a line chart showing the trend of the selected specific crime per capita
+    st.line_chart(specific_crime_trend.pivot(index='year', columns='political_affiliation', values='specific_crime_rate'))
+
+else:
+    st.write("No data available for the selected filters.")
