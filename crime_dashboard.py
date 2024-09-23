@@ -78,9 +78,19 @@ filtered_df = filtered_df.dropna(subset=['population', selected_specific_crime])
 
 # Ensure filtered data is not empty
 if not filtered_df.empty:
-    # First visual: Top 10 States for Violent Crimes by default
-    st.subheader(f"Top 10 States for Violent Crimes in {selected_year_range[0]} - {selected_year_range[1]}")
-    top_10_states = filtered_df[['state_abbr', 'violent_crime']].groupby('state_abbr').sum().sort_values(by='violent_crime', ascending=False).head(10)
+    # First visual: Top 10 States for Selected Crime Type by default
+    st.subheader(f"Top 10 States for {selected_specific_crime.title().replace('_', ' ')} in {selected_year_range[0]} - {selected_year_range[1]}")
+
+    # Group data by state and aggregate the values for the selected crime type
+    top_10_states = filtered_df[['state_abbr', selected_specific_crime]].groupby('state_abbr').sum()
+
+    # Sort values and get the top 10 states
+    top_10_states = top_10_states.sort_values(by=selected_specific_crime, ascending=False).head(10)
+
+    # Round the numbers for better readability
+    top_10_states[selected_specific_crime] = top_10_states[selected_specific_crime].round(0).astype(int)
+
+    # Display bar chart for the top 10 states
     st.bar_chart(top_10_states)
 
     # Second visual: Interactive map (Optimized map for color and performance)
